@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USC GPA Calculator</title>
+  <style>
+    :root {
+      --cardinal: #990000;
+      --cardinal-dark: #720000;
+      --gold: #ffcc00;
+      --ink: #1f2024;
+      --muted: #686b73;
+      --line: #dedfe3;
+      --surface: #ffffff;
+      --background: #f5f3ef;
+      --success: #237a4b;
+      --danger: #b42318;
+      --shadow: 0 16px 40px rgba(36, 25, 16, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(153, 0, 0, 0.09), transparent 28rem),
+        var(--background);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .topbar {
+      height: 7px;
+      background: linear-gradient(90deg, var(--cardinal) 0 78%, var(--gold) 78%);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 60px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--cardinal);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.35rem, 6vw, 4.2rem);
+      font-weight: 500;
+      letter-spacing: -0.045em;
+      line-height: 0.98;
+    }
+
+    .intro {
+      max-width: 420px;
+      margin: 0 0 4px;
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.55;
+    }
+
+    .app-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 310px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid rgba(31, 32, 36, 0.09);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 750;
+    }
+
+    .level-control {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.79rem;
+      font-weight: 700;
+    }
+
+    select,
+    input {
+      width: 100%;
+      border: 1px solid #d4d5da;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      outline: none;
+      transition: border 150ms, box-shadow 150ms;
+    }
+
+    select {
+      padding: 10px 34px 10px 11px;
+      cursor: pointer;
+    }
+
+    input {
+      padding: 11px 12px;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: var(--cardinal);
+      box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+    }
+
+    .level-control select {
+      width: 145px;
+      padding-block: 8px;
+      font-size: 0.84rem;
+    }
+
+    .table-head,
+    .course-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 1.5fr) minmax(90px, 0.7fr) minmax(82px, 0.55fr) 40px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .table-head {
+      padding: 13px 22px 8px;
+      color: #797b82;
+      font-size: 0.69rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #courseList {
+      padding: 0 22px;
+    }
+
+    .course-row {
+      padding: 8px 0;
+      border-bottom: 1px solid #eeeeef;
+      animation: enter 180ms ease-out;
+    }
+
+    @keyframes enter {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+    }
+
+    .course-row:last-child {
+      border-bottom: 0;
+    }
+
+    .course-name::placeholder {
+      color: #a2a4aa;
+    }
+
+    .remove {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: #8a8c92;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: 140ms;
+    }
+
+    .remove:hover:not(:disabled) {
+      background: #fff0f0;
+      color: var(--danger);
+    }
+
+    .remove:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+
+    .panel-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 22px;
+      border-top: 1px solid var(--line);
+      background: #fbfbfa;
+    }
+
+    button {
+      border: 0;
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .add-button {
+      padding: 11px 16px;
+      border: 1px solid #d2d3d7;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .add-button:hover {
+      border-color: var(--cardinal);
+      color: var(--cardinal);
+    }
+
+    .reset-button {
+      padding: 10px 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.83rem;
+    }
+
+    .reset-button:hover {
+      color: var(--danger);
+    }
+
+    .result-card {
+      position: sticky;
+      top: 24px;
+      overflow: hidden;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .result-main {
+      padding: 27px;
+      background: var(--cardinal);
+      color: white;
+    }
+
+    .result-label {
+      margin: 0 0 8px;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .gpa-line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    #gpaValue {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 4.4rem;
+      line-height: 1;
+      letter-spacing: -0.06em;
+    }
+
+    .gpa-scale {
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 0.9rem;
+    }
+
+    .progress-track {
+      height: 5px;
+      margin-top: 20px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    #progressBar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--gold);
+      transition: width 300ms ease;
+    }
+
+    .result-details {
+      padding: 20px 24px 23px;
+      background: white;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #ececef;
+      font-size: 0.88rem;
+    }
+
+    .metric:last-of-type {
+      border-bottom: 0;
+    }
+
+    .metric span:first-child {
+      color: var(--muted);
+    }
+
+    .metric strong {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .notice {
+      margin: 16px 0 0;
+      padding: 12px 13px;
+      border-left: 3px solid var(--gold);
+      background: #fff8d9;
+      color: #5e511f;
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    details {
+      margin-top: 22px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    summary {
+      padding: 17px 20px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .policy-content {
+      padding: 0 20px 19px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .grade-key {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .grade-key span {
+      padding: 5px 8px;
+      border: 1px solid #dedfe2;
+      border-radius: 6px;
+      background: white;
+      color: #4a4b50;
+      font-size: 0.73rem;
+      font-weight: 700;
+    }
+
+    .excluded {
+      margin-top: 12px;
+    }
+
+    @media (max-width: 780px) {
+      main {
+        padding-top: 32px;
+      }
+
+      header {
+        display: block;
+      }
+
+      .intro {
+        margin-top: 18px;
+      }
+
+      .app-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-card {
+        position: static;
+        grid-row: 1;
+      }
+
+      .result-main {
+        padding: 23px;
+      }
+
+      #gpaValue {
+        font-size: 3.7rem;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: min(100% - 20px, 1120px);
+      }
+
+      .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .level-control {
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      .level-control select {
+        width: 160px;
+      }
+
+      .table-head {
+        display: none;
+      }
+
+      #courseList {
+        padding-top: 8px;
+      }
+
+      .course-row {
+        grid-template-columns: 1fr 0.75fr 38px;
+        gap: 8px;
+        padding: 12px 0;
+      }
+
+      .course-name {
+        grid-column: 1 / -1;
+      }
+
+      .panel-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .add-button {
+        order: -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"></div>
+
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Academic planning tool</p>
+        <h1>GPA Calculator</h1>
+      </div>
+      <p class="intro">
+        Estimate your term GPA using USC’s grade-point values. Courses with
+        non-GPA marks are automatically excluded.
+      </p>
+    </header>
+
+    <div class="app-grid">
+      <section class="panel" aria-label="Course calculator">
+        <div class="panel-header">
+          <h2 class="panel-title">Your courses</h2>
+
+          <div class="level-control">
+            <label for="classLevel">Class level</label>
+            <select id="classLevel">
+              <option>Undergraduate</option>
+              <option>Graduate</option>
+              <option>Law</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-head" aria-hidden="true">
+          <span>Course</span>
+          <span>Grade</span>
+          <span>Units</span>
+          <span></span>
+        </div>
+
+        <div id="courseList"></div>
+
+        <div class="panel-actions">
+          <button class="add-button" id="addCourse" type="button">
+            + Add another class
+          </button>
+          <button class="reset-button" id="resetCourses" type="button">
+            Reset calculator
+          </button>
+        </div>
+      </section>
+
+      <aside class="result-card" aria-live="polite">
+        <div class="result-main">
+          <p class="result-label">Estimated term GPA</p>
+          <div class="gpa-line">
+            <strong id="gpaValue">0.00</strong>
+            <span class="gpa-scale">/ 4.00</span>
+          </div>
+          <div class="progress-track">
+            <div id="progressBar"></div>
+          </div>
+        </div>
+
+        <div class="result-details">
+          <div class="metric">
+            <span>GPA units</span>
+            <strong id="gpaUnits">0.0</strong>
+          </div>
+          <div class="metric">
+            <span>Quality points</span>
+            <strong id="qualityPoints">0.00</strong>
+          </div>
+          <div class="metric">
+            <span>Excluded courses</span>
+            <strong id="excludedCount">0</strong>
+          </div>
+
+          <p class="notice">
+            GPA is truncated to two decimal places, not rounded. This calculator
+            is an estimate and does not replace your official academic record.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+    <details>
+      <summary>Grade-point rules and class levels</summary>
+      <div class="policy-content">
+        <strong>Grades included in GPA:</strong>
+        <div class="grade-key">
+          <span>A · 4.0</span>
+          <span>A− · 3.7</span>
+          <span>B+ · 3.3</span>
+          <span>B · 3.0</span>
+          <span>B− · 2.7</span>
+          <span>C+ · 2.3</span>
+          <span>C · 2.0</span>
+          <span>C− · 1.7</span>
+          <span>D+ · 1.3</span>
+          <span>D · 1.0</span>
+          <span>D− · 0.7</span>
+          <span>F · 0.0</span>
+          <span>UW · 0.0</span>
+          <span>IX · 0.0</span>
+        </div>
+
+        <p class="excluded">
+          <strong>Excluded from GPA:</strong> CR, NC, P, NP, W, IP, MG and IN.
+        </p>
+
+        <p>
+          <strong>Undergraduate standing:</strong> freshman, fewer than 32 earned
+          units; sophomore, 32–63.9; junior, 64–95.9; senior, at least 96.
+          Graduate and Law refer to coursework attempted while pursuing the
+          corresponding degree. Other covers non-degree or non-degree-credit
+          coursework.
+        </p>
+      </div>
+    </details>
+  </main>
+
+  <script>
+    const gradePoints = {
+      "A": 4,
+      "A-": 3.7,
+      "B+": 3.3,
+      "B": 3,
+      "B-": 2.7,
+      "C+": 2.3,
+      "C": 2,
+      "C-": 1.7,
+      "D+": 1.3,
+      "D": 1,
+      "D-": 0.7,
+      "F": 0,
+      "UW": 0,
+      "IX": 0
+    };
+
+    const excludedGrades = ["CR", "NC", "P", "NP", "W", "IP", "MG", "IN"];
+    const allGrades = [...Object.keys(gradePoints), ...excludedGrades];
+
+    const courseList = document.getElementById("courseList");
+    const gpaValue = document.getElementById("gpaValue");
+    const gpaUnits = document.getElementById("gpaUnits");
+    const qualityPoints = document.getElementById("qualityPoints");
+    const excludedCount = document.getElementById("excludedCount");
+    const progressBar = document.getElementById("progressBar");
+
+    function gradeOptions(selected = "") {
+      const placeholder = `<option value="">Select grade</option>`;
+      const included = Object.keys(gradePoints)
+        .map(grade =>
+          `<option value="${grade}" ${grade === selected ? "selected" : ""}>${grade}</option>`
+        )
+        .join("");
+
+      const excluded = excludedGrades
+        .map(grade =>
+          `<option value="${grade}" ${grade === selected ? "selected" : ""}>${grade} — excluded</option>`
+        )
+        .join("");
+
+      return `${placeholder}
+        <optgroup label="Included in GPA">${included}</optgroup>
+        <optgroup label="Not included in GPA">${excluded}</optgroup>`;
+    }
+
+    function addCourse(name = "", grade = "", units = "4") {
+      const row = document.createElement("div");
+      row.className = "course-row";
+      row.innerHTML = `
+        <input
+          class="course-name"
+          type="text"
+          value="${name}"
+          placeholder="Course name (optional)"
+          aria-label="Course name"
+        />
+        <select class="course-grade" aria-label="Course grade">
+          ${gradeOptions(grade)}
+        </select>
+        <input
+          class="course-units"
+          type="number"
+          value="${units}"
+          min="0"
+          max="20"
+          step="0.5"
+          inputmode="decimal"
+          aria-label="Course units"
+        />
+        <button class="remove" type="button" aria-label="Remove course" title="Remove course">×</button>
+      `;
+
+      row.querySelectorAll("select, input").forEach(control => {
+        control.addEventListener("input", calculate);
+        control.addEventListener("change", calculate);
+      });
+
+      row.querySelector(".remove").addEventListener("click", () => {
+        row.remove();
+        updateRemoveButtons();
+        calculate();
+      });
+
+      courseList.appendChild(row);
+      updateRemoveButtons();
+      calculate();
+    }
+
+    function truncate(value, places) {
+      const factor = 10 ** places;
+      return Math.floor((value + Number.EPSILON) * factor) / factor;
+    }
+
+    function calculate() {
+      let unitsTotal = 0;
+      let pointsTotal = 0;
+      let excluded = 0;
+
+      document.querySelectorAll(".course-row").forEach(row => {
+        const grade = row.querySelector(".course-grade").value;
+        const unitsInput = row.querySelector(".course-units");
+        const units = Number(unitsInput.value);
+
+        unitsInput.setAttribute(
+          "aria-invalid",
+          unitsInput.value !== "" && units <= 0 ? "true" : "false"
+        );
+
+        if (!grade || !Number.isFinite(units) || units <= 0) return;
+
+        if (excludedGrades.includes(grade)) {
+          excluded += 1;
+          return;
+        }
+
+        unitsTotal += units;
+        pointsTotal += gradePoints[grade] * units;
+      });
+
+      const rawGpa = unitsTotal > 0 ? pointsTotal / unitsTotal : 0;
+      const displayedGpa = truncate(rawGpa, 2);
+
+      gpaValue.textContent = displayedGpa.toFixed(2);
+      gpaUnits.textContent = unitsTotal.toFixed(1);
+      qualityPoints.textContent = pointsTotal.toFixed(2);
+      excludedCount.textContent = excluded;
+      progressBar.style.width = `${Math.min(100, (rawGpa / 4) * 100)}%`;
+    }
+
+    function updateRemoveButtons() {
+      const rows = document.querySelectorAll(".course-row");
+      rows.forEach(row => {
+        row.querySelector(".remove").disabled = rows.length === 1;
+      });
+    }
+
+    function resetCalculator() {
+      courseList.innerHTML = "";
+      for (let i = 0; i < 4; i++) addCourse();
+      document.getElementById("classLevel").value = "Undergraduate";
+      courseList.querySelector("input").focus();
+    }
+
+    document.getElementById("addCourse").addEventListener("click", () => {
+      addCourse();
+      const rows = document.querySelectorAll(".course-row");
+      rows[rows.length - 1].querySelector(".course-name").focus();
+    });
+
+    document.getElementById("resetCourses").addEventListener("click", resetCalculator);
+
+    for (let i = 0; i < 4; i++) addCourse();
+  </script>
+</body>
+</html>
